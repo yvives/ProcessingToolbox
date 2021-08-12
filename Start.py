@@ -1,11 +1,11 @@
 """
 Startup Code
 
-
 """
 
 import sys
 sys.path.append('../marcos_client')
+sys.path.append('../pyqtgraph/examples')
 from PyQt5.QtWidgets import QApplication
 from controller.mainviewcontroller import MainViewController
 import cgitb 

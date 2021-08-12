@@ -8,19 +8,27 @@ Main View Controller
 
 """
 #from PyQt5.QtWidgets import QPushButton
-from controller.buttons import Buttons
+from controller.operations import Operations
 from PyQt5.uic import loadUiType, loadUi
 import sys
 sys.path.append('../marcos_client')
-
-
 import cgitb 
 cgitb.enable(format = 'text')
 import pdb
 st = pdb.set_trace
+import scipy.io
+from PyQt5 import QtCore
+from PyQt5 import QtGui
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QLabel, QVBoxLayout, QPushButton, QSpacerItem, QSizePolicy, QTextEdit
+from PyQt5.QtCore import pyqtSlot
+from utilities import change_axes
+import numpy as np
+import pyqtgraph as pg
+import pyqtgraph.opengl as gl
+import pyqtgraph.functions as fn
+from datetime import date,  datetime 
 
-MainWindow_Form, MainWindow_Base = loadUiType('ui/mainview.ui')
-
+MainWindow_Form, MainWindow_Base = loadUiType('ui/mainview_v2.ui')
 
 class MainViewController(MainWindow_Form, MainWindow_Base):
     """
@@ -29,208 +37,81 @@ class MainViewController(MainWindow_Form, MainWindow_Base):
    
     def __init__(self):
         super(MainViewController, self).__init__()
-        self.ui = loadUi('ui/mainview.ui')
+        self.ui = loadUi('ui/mainview_v2.ui')
         self.setupUi(self)
         
+        self.tab=Operations(self)
+        self.layout_operations.addWidget(self.tab)
         
-        # Set buttons layout
-        self.buttons = Buttons(self)
-#        self.styleSheet = style.breezeLight
-#        self.setupStylesheet(self.styleSheet)
-#  
-#        # Initialisation of sequence list
-#        self.sequencelist = SequenceList(self)
-#        self.sequencelist.setCurrentIndex(1)
-##        self.sequencelist.itemClicked.connect(self.sequenceChangedSlot)
-#        self.sequencelist.currentIndexChanged.connect(self.selectionChanged)
-#        self.layout_operations.addWidget(self.sequencelist)
+        # Toolbar Actions
+        self.action_load.triggered.connect(self.load_file)
+        self.action_save.triggered.connect(self.save)
+        self.action_close.triggered.connect(self.close)    
+        self.action_plot.triggered.connect(self.plot3D) 
+        self.action_reload.triggered.connect(self.reload)       
+        
+        # Status bar
+        self.statusBar.showMessage('No file loaded')
         
         # Console
-#        self.cons = self.generateConsole('')
-#        self.layout_output.addWidget(self.cons)
-#        sys.stdout = EmittingStream(textWritten=self.onUpdateText)
-#        sys.stderr = EmittingStream(textWritten=self.onUpdateText)        
-#        
-#        # Initialisation of acquisition controller
-#        acqCtrl = AcquisitionController(self, self.sequencelist)
-#        
-#        # Connection to the server
-#        self.ip = ip_address
-#        
-        # Init gpa
-        
-        
-#        # Toolbar Actions
-#        self.action_gpaInit.triggered.connect(self.initgpa)
-#        self.action_calibration.triggered.connect(self.calibrate)
-#        self.action_changeappearance.triggered.connect(self.changeAppearanceSlot)
-#        self.action_acquire.triggered.connect(acqCtrl.startAcquisition)
-#        self.action_loadparams.triggered.connect(self.load_parameters)
-#        self.action_saveparams.triggered.connect(self.save_parameters)
-#        self.action_close.triggered.connect(self.close)    
-#        self.action_savedata.triggered.connect(self.save_data)
-#        self.action_exportfigure.triggered.connect(self.export_figure)
-#        self.action_viewsequence.triggered.connect(self.plot_sequence)
+        self.cons = self.generateConsole('')
 
-#    # Generate buttons
-#        self.buttSave = self.generateButtons('Save')
-#        self.layout_buttons.addWidget(self.buttSave)
-#        self.buttPlot = self.generateButtons('Plot')
-#        self.layout_buttons.addWidget(self.buttPlot)
-#        self.buttLoad = self.generateButtons('Load')
-#        self.layout_buttons.addWidget(self.buttLoad)        
-#
-#
-#    def generateButtons(self, text):
-#        qbtn = QPushButton(text, self)
-#        return qbtn
+#        sys.stdout = EmittingStream(textWritten=self.onUpdateText)
+        
+                
+#        sys.stderr = EmittingStream(textWritten=self.onUpdateText)      
+
+              
+    @staticmethod
+    def generateConsole(text):
+        con = QTextEdit()
+        con.setText(text)
+        return con
+        
+    def onUpdateText(self, text):
+        cursor = self.cons.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.cons.setTextCursor(cursor)
+        self.cons.ensureCursorVisible()
+
+
+    def close(self):
+        sys.exit()       
+        
+    def load_file(self):
     
-    
-#    @staticmethod
-#    def generateConsole(text):
-#        con = QTextEdit()
-#        con.setText(text)
-#        return con
-#    
-#    def onUpdateText(self, text):
-#        cursor = self.cons.textCursor()
-#        cursor.movePosition(QtGui.QTextCursor.End)
-#        cursor.insertText(text)
-#        self.cons.setTextCursor(cursor)
-#        self.cons.ensureCursorVisible()
-#    
-#    def __del__(self):
-#        sys.stdout = sys.__stdout__
-#        sys.stderr = sys.__stderr__
-#        
-#    def closeEvent(self, event):
-#        """Shuts down application on close."""
-#        # Return stdout to defaults.
-#        sys.stdout = sys.__stdout__
-#        super().closeEvent(event)
-#    
-#    @pyqtSlot(bool)
-#    def changeAppearanceSlot(self) -> None:
-#        """
-#        Slot function to switch application appearance
-#        @return:
-#        """
-#        if self.styleSheet is style.breezeDark:
-#            self.setupStylesheet(style.breezeLight)
-#        else:
-#            self.setupStylesheet(style.breezeDark)
-#       
-#    def close(self):
-#        sys.exit()   
-#
-#    def setupStylesheet(self, style) -> None:
-#        """
-#        Setup application stylesheet
-#        @param style:   Stylesheet to be set
-#        @return:        None
-#        """
-#        self.styleSheet = style
-#        file = QFile(style)
-#        file.open(QFile.ReadOnly | QFile.Text)
-#        stream = QTextStream(file)
-#        stylesheet = stream.readAll()
-#        self.setStyleSheet(stylesheet)  
-#        
-##    @pyqtSlot(QListWidgetItem)
-##    def sequenceChangedSlot(self, item: QListWidgetItem = None) -> None:
-##        """
-##        Operation changed slot function
-##        @param item:    Selected Operation Item
-##        @return:        None
-##        """
-##        self.sequence = item.text()
-##        self.onSequenceChanged.emit(self.sequence)
-##        self.action_acquire.setEnabled(True)
-##        self.clearPlotviewLayout()
-#        
-#    def selectionChanged(self,item):
-#        self.sequence = self.sequencelist.currentText()
-#        self.onSequenceChanged.emit(self.sequence)
-#        self.action_acquire.setEnabled(True)
 #        self.clearPlotviewLayout()
-#    
-#    def clearPlotviewLayout(self) -> None:
-#        """
-#        Clear the plot layout
-#        @return:    None
-#        """
-#        for i in reversed(range(self.plotview_layout.count())):
-#            if self.plotview_layout.itemAt(i).layout():
-#                self.plotview_layout.itemAt(i).layout().setParent(None)
-#            self.plotview_layout.itemAt(i).widget().setParent(None)
-#          
-#    
-#    def save_data(self):
-#        
-#        dataobject: DataManager = DataManager(self.rxd, self.lo_freq, len(self.rxd), [], self.BW)
-#        dict = vars(defaultsequences[self.sequence])
-#        dt = datetime.now()
-#        dt_string = dt.strftime("%d-%m-%Y_%H:%M")
-#        dt2 = date.today()
-#        dt2_string = dt2.strftime("%d-%m-%Y")
-#        dict["rawdata"] = self.rxd
-#        dict["fft"] = dataobject.f_fftData
-#        if not os.path.exists('experiments/acquisitions/%s' % (dt2_string)):
-#            os.makedirs('experiments/acquisitions/%s' % (dt2_string))
-#            
-#        if not os.path.exists('experiments/acquisitions/%s/%s' % (dt2_string, dt_string)):
-#            os.makedirs('experiments/acquisitions/%s/%s' % (dt2_string, dt_string)) 
-#            
-#        savemat("experiments/acquisitions/%s/%s/%s.mat" % (dt2_string, dt_string, self.sequence), dict)
-#        
-#        self.messages("Data saved")
-#
-#    def export_figure(self):
-#        
-#        dt = datetime.now()
-#        dt_string = dt.strftime("%d-%m-%Y_%H:%M")
-#        dt2 = date.today()
-#        dt2_string = dt2.strftime("%d-%m-%Y")
-#
-#        if not os.path.exists('experiments/acquisitions/%s' % (dt2_string)):
-#            os.makedirs('experiments/acquisitions/%s' % (dt2_string))    
-#        if not os.path.exists('experiments/acquisitions/%s/%s' % (dt2_string, dt_string)):
-#            os.makedirs('experiments/acquisitions/%s/%s' % (dt2_string, dt_string)) 
-#                    
-#        exporter1 = pyqtgraph.exporters.ImageExporter(self.f_plotview.scene())
-#        exporter1.export("experiments/acquisitions/%s/%s/Freq%s.png" % (dt2_string, dt_string, self.sequence))
-#        exporter2 = pyqtgraph.exporters.ImageExporter(self.t_plotview.scene())
-#        exporter2.export("experiments/acquisitions/%s/%s/Temp%s.png" % (dt2_string, dt_string, self.sequence))
-#        
-#        self.messages("Figures saved")
-#
-#    def load_parameters(self):
-#    
-#        self.clearPlotviewLayout()
-#        file_name, _ = QFileDialog.getOpenFileName(self, 'Open Parameters File', "experiments/parameterisations/")
-#        
-#        if file_name:
-#            f = open(file_name,"r")
-#            contents=f.read()
-#            new_dict=ast. literal_eval(contents)
-#            f.close()
-#
-#        lab = 'nmspc.%s' %(new_dict['seq'])
-#        item=eval(lab)
-#
-#        del new_dict['seq']     
-#        for key in new_dict:       
-#            setattr(defaultsequences[self.sequence], key, new_dict[key])
-#        
-#        self.sequence = item
-#        self.onSequenceChanged.emit(self.sequence)
-#
-#        self.messages("Parameters of %s sequence loaded" %(self.sequence))
-#
-#    def save_parameters(self):
-#        
-#        dt = datetime.now()
-#        dt_string = dt.strftime("%d-%m-%Y_%H_%M")
+        self.file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', "/share_vm/results_experiments/")
+        self.plot_title='K-Space (abs) loaded data'
+        
+        if self.file_name:
+            self.data_loaded= scipy.io.loadmat(self.file_name)
+            
+            axes=self.data_loaded["axes"]
+            axis1=axes[0, 0]
+            axis2=axes[0, 1]
+            axis3=axes[0, 2]
+            n=self.data_loaded["n"]
+            n1=n[0, 0]
+            n2=n[0, 1]
+            n3=n[0, 2]
+            x, y, z, self.n_rd, self.n_ph, self.n_sl = change_axes(axis1,axis2,axis3,n1,n2,n3)
+            self.ns = [self.n_rd, self.n_ph, self.n_sl]
+            average=self.data_loaded["average"]
+            self.data_kS = np.reshape(average, (self.n_sl, self.n_ph, self.n_rd))
+            self.data=self.data_kS
+            
+            self.statusBar.clearMessage()
+            self.statusBar.showMessage(self.file_name)
+        else:
+            self.file=QLabel("No file loaded")
+            self.statusBar.addWidget(self.file)
+
+    def save(self):
+        
+        dt = datetime.now()
+        dt_string = dt.strftime("%d-%m-%Y_%H_%M")
 #        dict = vars(defaultsequences[self.sequence]) 
 #        
 #        sequ = '%s' %(self.sequence)
@@ -238,46 +119,147 @@ class MainViewController(MainWindow_Form, MainWindow_Base):
 #        f = open("experiments/parameterisations/%s_params_%s.txt" % (sequ, dt_string),"w")
 #        f.write( str(dict) )
 #        f.close()
-#  
-#        self.messages("Parameters of %s sequence saved" %(self.sequence))
-#        
-#    def plot_sequence(self):
-#        
-#        plotSeq=1
-#        self.sequence = defaultsequences[self.sequencelist.getCurrentSequence()]
-#        
-#        if self.sequence.seq == 'FID':
-#            fid(self.sequence, plotSeq)
-#        if self.sequence.seq=='SE':
-#            spin_echo(self.sequence, plotSeq) 
-#        if self.sequence.seq=='SE1D':
-#            spin_echo1D(self.sequence, plotSeq)
-#        if self.sequence.seq=='SE2D':
-#            spin_echo2D(self.sequence, plotSeq)
-#        if self.sequence.seq=='SE3D':
-#            spin_echo3D(self.sequence, plotSeq)
-#        if self.sequence.seq == 'R':
-#            radial(self.sequence, plotSeq)    
-#        elif self.sequence.seq == 'GE':
-#            grad_echo(self.sequence, plotSeq)   
-#        elif self.sequence.seq == 'TSE':
-#            turbo_spin_echo(self.sequence, plotSeq)    
-##        seqViewer = SequenceViewer(self, self.sequencelist)
-##        seqViewer.plotSequence()
-##        seqViewer.show()
-#  
-#        
-#    def messages(self, text):
-#        
-#        msg = QMessageBox()
-#        msg.setIcon(QMessageBox.Information)
-#        msg.setText(text)
-#        msg.exec();
-#        
-#    def calibrate(self):
-#        seqCalib = CalibrationController(self, self.sequencelist)
-#        seqCalib.show()
-#        
-#    def initgpa(self):
-#        expt = ex.Experiment(init_gpa=True)
-#        expt.run()
+  
+        self.messages("Saved")
+
+           
+    def reload(self):
+        
+        self.data_loaded= scipy.io.loadmat(self.file_name)
+        average=self.data_loaded["average"]
+        self.data_kS = np.reshape(average, (self.n_sl, self.n_ph, self.n_rd))
+        self.data=self.data_kS
+        self.plot_title='K-Space (abs) loaded data'
+        self.plot3D()
+        self.messages("Original file reloaded")  
+
+        
+           
+    #############################################################
+    ########################  3D plot ###############################
+    #############################################################
+         
+    def plot3D(self):  
+     
+        self.clearLayoutPlots()
+        
+        self.layout_output.addWidget(self.cons)
+        
+        if hasattr(self, 'data'):
+            t=np.iscomplex(self.data)
+            if np.any(t):
+                self.data3D=np.abs(self.data)
+            else:
+                self.data3D=self.data
+            
+            with np.errstate(divide = 'ignore'):
+                positive = np.log(fn.clip_array(self.data3D, 0, self.data3D.max())**2)
+#                negative = np.log(fn.clip_array(-fft, 0, -fft.min())**2)
+            d2 = np.empty(self.data3D.shape + (4,), dtype=np.ubyte)
+            d2[..., 0] = positive * (255./positive.max())
+            d2[..., 1] = 0
+            d2[..., 2] = d2[...,1]
+            d2[..., 3] = d2[..., 0]*0.3 + d2[..., 1]*0.3
+            d2[..., 3] = (d2[..., 3].astype(float) / 255.) **2 * 255
+
+            d2[:, 0, 0] = [255,0,0,100]
+            d2[0, :, 0] = [0,255,0,100]
+            d2[0, 0, :] = [0,0,255,100]
+            
+            self.w = gl.GLViewWidget()
+            v = gl.GLVolumeItem(d2)
+            self.w.addItem(v)
+
+            self.layout_plots.addWidget(self.w)
+            
+            #############################################################
+            ########################  ImageView Plot ###########################
+            #############################################################
+            
+            self.layout2 = QVBoxLayout()
+            self.b1 = QPushButton('Change View', self)
+            self.layout2.addWidget(self.b1)
+            self.label = QLabel("%s" % (self.plot_title))
+            self.label.setAlignment(QtCore.Qt.AlignCenter)
+            self.label.setStyleSheet("background-color: black;color: white")
+            self.layout2.addWidget(self.label)
+            self.w1 = pg.ImageView()
+            self.w1.setImage(self.data3D)
+            self.roi = pg.RectROI([0, 0], [5,5], pen='r')
+#            
+#            value = self.w1.getRoiPlot()
+#            print(value)
+            self.w1.addItem(self.roi)
+
+            self.layout2.addWidget(self.w1)
+            self.layout_plots.addLayout(self.layout2)
+
+            self.b1.clicked.connect(self.button_clicked)
+            
+            self.w1.roi.sigRegionChanged.connect(self.roi_avg)
+            
+#            selected = self.w1.roiChanged()
+#            selected = self.roi.getArrayRegion(self.data3D, self.w1)
+#            print(selected.mean(axis=0))
+            
+        else:
+            self.messages("No data loaded")   
+            
+    @pyqtSlot()
+    def roi_avg(self):
+        for i in reversed(range(self.layout_plots.count())):
+            if hasattr(self.layout_plots.itemAt(i).widget(), 'roi') :
+                selected =self.layout_plots.itemAt(i).widget().roi.getArrayRegion(self.data,self.layout_plots.itemAt(i).widget().getImageItem(), axes=(0,1))
+                nonzeroVals = selected[np.nonzero(selected)]
+                print(np.mean(nonzeroVals))
+            
+    def messages(self, text):
+        
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText(text)
+        msg.exec();
+        
+    def clearLayoutPlots(self):
+    
+        for i in reversed(range(self.layout_plots.count())):
+            if self.layout_plots.itemAt(i).layout():
+                self.layout_plots.itemAt(i).layout().setParent(None)
+            else:
+                self.layout_plots.itemAt(i).widget().setParent(None)
+    
+    
+    @pyqtSlot()
+    def button_clicked(self):
+        
+        self.clearLayoutPlots()
+        im = self.data
+        self.data=np.moveaxis(im, 0, -1)
+        
+        self.b1.setChecked(False)
+        self.plot3D()
+        
+class ImageView(pg.ImageView):
+
+    # constructor which inherit original
+    # ImageView
+    def __init__(self, *args, **kwargs):
+        pg.ImageView.__init__(self, *args, **kwargs)
+
+    # roi changed method
+    def roiChanged(self):
+
+        # printing message
+        print("ROI Changed")  
+#        self.roi = pg.ImageView.getRoiPlot(self)  
+#        selected = self.roi.getArrayRegion(self.data, self.w1)
+#        print(selected.mean(axis=0))
+        
+class EmittingStream(QtCore.QObject):
+
+    textWritten = QtCore.pyqtSignal(str)
+
+    def write(self, text):
+        self.textWritten.emit(str(text))
+
+
